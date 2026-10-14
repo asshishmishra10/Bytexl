@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
-import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   Activity, ArrowDown, ArrowRight, ArrowUpRight, Check, ChevronRight, CircleHelp,
   Download, Globe2, Layers3, LayoutDashboard, Menu, Network, Plus,
@@ -12,7 +12,7 @@ import {
 import AuthPage from './AuthPage';
 import { AccountPage } from './AccountPage';
 import { readProfile, saveProfile, type AccountProfile } from './account';
-import { getStoredAnalyst, signOut as signOutSupabase, type AnalystProfile } from './supabase';
+import { getStoredAnalyst, saveStoredAnalyst, signOut as signOutSupabase, type AnalystProfile } from './supabase';
 import {
   apiBase, wsUrl,
   fetchDetections, fetchActiveBrand, saveBrand, analyzeProfile, analyzeApp, analyzeUrl,
@@ -171,8 +171,17 @@ function Chart({ rows = [], compact = false }: { rows?: Detection[]; compact?: b
   );
 }
 
-function Landing({ rows = [] }: { rows?: Detection[] }) {
+function Landing({
+  rows = [],
+  currentUser,
+  onDemoSignIn
+}: {
+  rows?: Detection[];
+  currentUser?: AnalystProfile | null;
+  onDemoSignIn?: () => void;
+}) {
   const [menu, setMenu] = useState(false);
+  const navigate = useNavigate();
 
   const topSignal = rows.find(r => r.tier === 2) || rows[0];
   const signalName = topSignal ? topSignal.name : 'com.apexbank.fraud.apk';
@@ -192,15 +201,62 @@ function Landing({ rows = [] }: { rows?: Detection[] }) {
           <Link to="/app/architecture" onClick={() => setMenu(false)} style={{ color: 'var(--mint)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <Workflow size={13} /> Architecture
           </Link>
-          <Link to="/signup" onClick={() => setMenu(false)} style={{ color: 'var(--accent)', fontWeight: 600 }}>Create Account</Link>
-          <Link to="/login" onClick={() => setMenu(false)}>Sign in</Link>
+          <div className="mobile" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {currentUser ? (
+              <>
+                <Link to="/app/account" onClick={() => setMenu(false)} className="button subtle" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                  <span className="dot live" /> {currentUser.full_name}
+                </Link>
+                <Link className="button primary" to="/app" onClick={() => setMenu(false)} style={{ justifyContent: 'center' }}>
+                  Enter console <ArrowUpRight size={16} />
+                </Link>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="button subtle"
+                  onClick={() => {
+                    setMenu(false);
+                    if (onDemoSignIn) onDemoSignIn();
+                    navigate('/app');
+                  }}
+                  style={{ borderColor: 'var(--accent)', color: 'var(--accent)', display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
+                >
+                  <Sparkles size={14} /> Demo sign-in
+                </button>
+                <Link className="button primary" to="/login" onClick={() => setMenu(false)} style={{ justifyContent: 'center' }}>
+                  Sign in <KeyRound size={14} />
+                </Link>
+              </>
+            )}
+          </div>
         </nav>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Link className="button subtle desktop" to="/signup" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
-            Sign up <UserPlus size={14} />
-          </Link>
-          <Link className="button subtle desktop" to="/login">Sign in <KeyRound size={14} /></Link>
-          <Link className="button primary desktop" to="/app">Enter console <ArrowUpRight size={16} /></Link>
+          {currentUser ? (
+            <>
+              <Link to="/app/account" className="button subtle desktop" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span className="dot live" /> {currentUser.full_name}
+              </Link>
+              <Link className="button primary desktop" to="/app">Enter console <ArrowUpRight size={16} /></Link>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="button subtle desktop"
+                onClick={() => {
+                  if (onDemoSignIn) onDemoSignIn();
+                  navigate('/app');
+                }}
+                style={{ borderColor: 'var(--accent)', color: 'var(--accent)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                title="1-Click Demo Evaluation Sign-in"
+              >
+                <Sparkles size={14} /> Demo sign-in
+              </button>
+              <Link className="button primary desktop" to="/login">Sign in <KeyRound size={14} /></Link>
+            </>
+          )}
         </div>
         <button className="icon-button mobile" aria-label="Toggle navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}>
           {menu ? <X /> : <Menu />}
@@ -213,9 +269,29 @@ function Landing({ rows = [] }: { rows?: Detection[] }) {
             <h1>Your reputation.<br />Beyond the<br /><em>perimeter.</em></h1>
             <p>Find the impersonators hiding in plain sight.<br className="desktop" /> One intelligence layer for your brand’s digital world.</p>
             <div className="hero-actions">
-              <Link className="button primary" to="/app">Explore the console <ArrowUpRight size={18} /></Link>
-              <Link className="button subtle" to="/app/architecture"><Workflow size={16} /> Architecture & Pipeline</Link>
-              <Link className="button subtle" to="/signup"><UserPlus size={16} /> Register with Supabase</Link>
+              {currentUser ? (
+                <>
+                  <Link className="button primary" to="/app">Enter console <ArrowUpRight size={18} /></Link>
+                  <Link className="button subtle" to="/app/architecture"><Workflow size={16} /> Architecture & Pipeline</Link>
+                  <Link className="button subtle" to="/app/account"><ShieldCheck size={16} /> Account settings</Link>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="button primary"
+                    onClick={() => {
+                      if (onDemoSignIn) onDemoSignIn();
+                      navigate('/app');
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <Sparkles size={18} /> Demo Sign-in <ArrowUpRight size={18} />
+                  </button>
+                  <Link className="button subtle" to="/login"><KeyRound size={16} /> Sign in / Register</Link>
+                  <Link className="button subtle" to="/app/architecture"><Workflow size={16} /> Architecture & Pipeline</Link>
+                </>
+              )}
             </div>
             <div className="hero-note"><ShieldCheck size={15} /> Explainable signals. Machine learning backed.</div>
           </div>
@@ -336,7 +412,26 @@ function Landing({ rows = [] }: { rows?: Detection[] }) {
           <Reveal>
             <span className="eyebrow"><span className="dot" /> YOUR NEXT ADVANTAGE</span>
             <h2>Protect what<br />makes you, <em>you.</em></h2>
-            <Link className="button primary" to="/app">Step inside Aegis <ArrowUpRight size={18} /></Link>
+            {currentUser ? (
+              <Link className="button primary" to="/app">Enter console <ArrowUpRight size={18} /></Link>
+            ) : (
+              <div style={{ display: 'inline-flex', gap: '14px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="button primary"
+                  onClick={() => {
+                    if (onDemoSignIn) onDemoSignIn();
+                    navigate('/app');
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Sparkles size={16} /> Demo Sign-in (Instant Access)
+                </button>
+                <Link className="button subtle" to="/login">
+                  <KeyRound size={16} /> Sign in
+                </Link>
+              </div>
+            )}
           </Reveal>
           <div className="cta-orbit"><Shield size={76} strokeWidth={0.6} /></div>
         </section>
@@ -459,23 +554,13 @@ function Shell({ children, rows, brandName, connected, currentUser, onSignOut }:
                   <LogOut size={12} /> Sign out
                 </button>
               ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <Link
-                    className="text-button"
-                    style={{ color: 'var(--accent)', fontSize: '10px', padding: '0', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    to="/login"
-                  >
-                    <KeyRound size={12} /> Sign in
-                  </Link>
-                  <span style={{ color: 'var(--line)', fontSize: '10px' }}>|</span>
-                  <Link
-                    className="text-button"
-                    style={{ color: 'var(--mint)', fontSize: '10px', padding: '0', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    to="/signup"
-                  >
-                    <UserPlus size={12} /> Sign up
-                  </Link>
-                </div>
+                <Link
+                  className="text-button"
+                  style={{ color: 'var(--accent)', fontSize: '10px', padding: '0', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  to="/login"
+                >
+                  <KeyRound size={12} /> Sign in / Demo
+                </Link>
               )}
             </div>
           </div>
@@ -2416,6 +2501,7 @@ function Root() {
 
   const handleSignOut = async () => {
     await signOutSupabase();
+    saveStoredAnalyst(null);
     setCurrentUser(null);
   };
 
@@ -2467,24 +2553,42 @@ function Root() {
     setRows(previous => [d, ...previous.filter(p => p.id !== d.id)]);
   };
 
+  const handleDemoSignIn = () => {
+    const demoUser: AnalystProfile = {
+      id: 'demo-analyst-1',
+      email: 'alex@apexbank.com',
+      full_name: 'Alex Morgan',
+      role: 'Tier 1 SOC Analyst',
+      avatar_initials: 'AM',
+    };
+    saveProfile({
+      ...readProfile(),
+      name: demoUser.full_name,
+      email: demoUser.email,
+      title: demoUser.role,
+    });
+    saveStoredAnalyst(demoUser);
+    setCurrentUser(demoUser);
+  };
+
   const app = location.pathname.startsWith('/app');
   const brandName = brand?.name ?? 'Apex Global Bank';
 
   const content = (
     <Routes>
-      <Route path="/" element={<Landing rows={rows} />} />
+      <Route path="/" element={<Landing rows={rows} currentUser={currentUser} onDemoSignIn={handleDemoSignIn} />} />
       <Route path="/login" element={<AuthPage mode="login" onAuthSuccess={p => setCurrentUser(p)} />} />
       <Route path="/signup" element={<AuthPage mode="signup" onAuthSuccess={p => setCurrentUser(p)} />} />
-      <Route path="/app" element={<Dashboard rows={rows} onRefresh={loadData} />} />
-      <Route path="/app/analyzer" element={<Analyzer onDetection={onDetection} />} />
-      <Route path="/app/brand" element={<Brand />} />
+      <Route path="/app" element={currentUser ? <Dashboard rows={rows} onRefresh={loadData} /> : <Navigate to="/login" replace />} />
+      <Route path="/app/analyzer" element={currentUser ? <Analyzer onDetection={onDetection} /> : <Navigate to="/login" replace />} />
+      <Route path="/app/brand" element={currentUser ? <Brand /> : <Navigate to="/login" replace />} />
       <Route path="/app/architecture" element={<Architecture />} />
-      <Route path="/app/evidence/:id" element={<Evidence rows={rows} />} />
-      <Route path="/app/cases" element={<Cases />} />
-      <Route path="/app/campaigns" element={<Campaigns rows={rows} />} />
-      <Route path="/app/typosquat" element={<Domains />} />
-      <Route path="/app/model-monitor" element={<Monitor />} />
-      <Route path="/app/account" element={<AccountPage profile={accountProfile} onSave={handleAccountSave} onSignOut={handleSignOut} />} />
+      <Route path="/app/evidence/:id" element={currentUser ? <Evidence rows={rows} /> : <Navigate to="/login" replace />} />
+      <Route path="/app/cases" element={currentUser ? <Cases /> : <Navigate to="/login" replace />} />
+      <Route path="/app/campaigns" element={currentUser ? <Campaigns rows={rows} /> : <Navigate to="/login" replace />} />
+      <Route path="/app/typosquat" element={currentUser ? <Domains /> : <Navigate to="/login" replace />} />
+      <Route path="/app/model-monitor" element={currentUser ? <Monitor /> : <Navigate to="/login" replace />} />
+      <Route path="/app/account" element={currentUser ? <AccountPage profile={accountProfile} onSave={handleAccountSave} onSignOut={handleSignOut} /> : <Navigate to="/login" replace />} />
       <Route
         path="*"
         element={
