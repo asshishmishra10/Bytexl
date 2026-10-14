@@ -18,8 +18,9 @@ MODEL_DIR = os.path.dirname(__file__)
 class PureTreeEnsemble:
     """Zero-dependency evaluator for XGBoost JSON models."""
 
-    def __init__(self, json_path: str):
+    def __init__(self, json_path: str, fallback_feature_names_path: Optional[str] = None):
         self.json_path = json_path
+        self.fallback_feature_names_path = fallback_feature_names_path
         self.trees: List[Dict[str, Any]] = []
         self.feature_names: List[str] = []
         self.base_score: float = 0.5
@@ -40,6 +41,15 @@ class PureTreeEnsemble:
 
         booster = learner.get("gradient_booster", {}).get("model", {})
         self.trees = booster.get("trees", [])
+
+        # Some models are trained without embedded feature names; fall back to
+        # the sidecar names file so explainability stays available on serverless.
+        if not self.feature_names and self.fallback_feature_names_path and os.path.exists(self.fallback_feature_names_path):
+            try:
+                with open(self.fallback_feature_names_path, "r", encoding="utf-8") as f:
+                    self.feature_names = json.load(f) or []
+            except Exception:
+                self.feature_names = []
 
     def predict_proba(self, x: List[float]) -> float:
         """Computes sigmoid(raw_margin) probability in [0.0, 1.0]."""
@@ -123,5 +133,8 @@ def get_pure_mobile_ensemble() -> PureTreeEnsemble:
 def get_pure_url_ensemble() -> PureTreeEnsemble:
     global _cached_url
     if _cached_url is None:
-        _cached_url = PureTreeEnsemble(os.path.join(MODEL_DIR, "url_xgb_model.json"))
+        _cached_url = PureTreeEnsemble(
+            os.path.join(MODEL_DIR, "url_xgb_model.json"),
+            fallback_feature_names_path=os.path.join(MODEL_DIR, "url_feature_names.json"),
+        )
     return _cached_url

@@ -11,7 +11,6 @@ import logging
 import re
 from typing import Dict, Any, Optional
 import requests
-from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +18,12 @@ GOOGLE_PLAY_BASE = "https://play.google.com/store/apps/details"
 ITUNES_SEARCH_BASE = "https://itunes.apple.com/search"
 ITUNES_LOOKUP_BASE = "https://itunes.apple.com/lookup"
 DEFAULT_TIMEOUT = 1.5
+
+
+def _strip_html(fragment: str) -> str:
+    """Strip nested markup and collapse whitespace from an HTML fragment."""
+    text = re.sub(r"<[^>]+>", " ", fragment)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def verify_google_play_package(package_name: str, timeout: float = DEFAULT_TIMEOUT) -> Dict[str, Any]:
@@ -62,33 +67,44 @@ def verify_google_play_package(package_name: str, timeout: float = DEFAULT_TIMEO
 
         if resp.status_code == 200:
             result["on_store"] = True
-            soup = BeautifulSoup(resp.text, "html.parser")
+            html = resp.text
 
-            # Extract Title (h1)
-            h1 = soup.find("h1")
-            if h1:
-                result["title"] = h1.get_text(strip=True)
+            # Extract Title (first h1)
+            title_match = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.DOTALL | re.IGNORECASE)
+            if title_match:
+                result["title"] = _strip_html(title_match.group(1)) or None
 
-            # Extract Developer name
-            dev_elem = soup.find("a", href=re.compile(r"/store/apps/developer\?id="))
-            if dev_elem:
-                result["developer"] = dev_elem.get_text(strip=True)
-            else:
+            # Extract Developer name from the store developer link
+            dev_match = re.search(
+                r"<a[^>]+href=[\"'][^\"']*/store/apps/developer\?id=[^\"']*[\"'][^>]*>(.*?)</a>",
+                html,
+                re.DOTALL | re.IGNORECASE,
+            ) or re.search(
                 # Fallback search for developer link
-                dev_elem = soup.find("a", href=re.compile(r"/store/apps/dev\?id="))
-                if dev_elem:
-                    result["developer"] = dev_elem.get_text(strip=True)
+                r"<a[^>]+href=[\"'][^\"']*/store/apps/dev\?id=[^\"']*[\"'][^>]*>(.*?)</a>",
+                html,
+                re.DOTALL | re.IGNORECASE,
+            )
+            if dev_match:
+                result["developer"] = _strip_html(dev_match.group(1)) or None
 
             # Extract Installs / Downloads bracket (e.g. 5M+ downloads, 100K+)
-            text_all = resp.text
-            installs_match = re.search(r"(\d+[\d,]*\+?)\s*(?:downloads|installs)", text_all, re.IGNORECASE)
+            installs_match = re.search(r"(\d+[\d,]*\+?)\s*(?:downloads|installs)", html, re.IGNORECASE)
             if installs_match:
                 result["installs"] = installs_match.group(1)
 
-            # Extract Icon URL
-            icon_meta = soup.find("meta", property="og:image")
-            if icon_meta and icon_meta.get("content"):
-                result["icon_url"] = icon_meta["content"]
+            # Extract Icon URL from og:image meta tag
+            icon_match = re.search(
+                r"<meta[^>]+property=[\"']og:image[\"'][^>]*content=[\"']([^\"']+)[\"']",
+                html,
+                re.IGNORECASE,
+            ) or re.search(
+                r"<meta[^>]+content=[\"']([^\"']+)[\"'][^>]*property=[\"']og:image[\"']",
+                html,
+                re.IGNORECASE,
+            )
+            if icon_match:
+                result["icon_url"] = icon_match.group(1)
 
         elif resp.status_code == 404:
             # Package does not exist on official Google Play Store
