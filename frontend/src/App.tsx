@@ -198,41 +198,11 @@ function Landing({
         <nav className={menu ? 'open' : ''}>
           <a href="#capabilities" onClick={() => setMenu(false)}>Platform</a>
           <a href="#workflow" onClick={() => setMenu(false)}>How it works</a>
-          <Link to="/app/architecture" onClick={() => setMenu(false)} style={{ color: 'var(--mint)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <Link to="/app/architecture" onClick={() => setMenu(false)} style={{ color: 'var(--mint)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
             <Workflow size={13} /> Architecture
           </Link>
-          <div className="mobile" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {currentUser ? (
-              <>
-                <Link to="/app/account" onClick={() => setMenu(false)} className="button subtle" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                  <span className="dot live" /> {currentUser.full_name}
-                </Link>
-                <Link className="button primary" to="/app" onClick={() => setMenu(false)} style={{ justifyContent: 'center' }}>
-                  Enter console <ArrowUpRight size={16} />
-                </Link>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="button subtle"
-                  onClick={() => {
-                    setMenu(false);
-                    if (onDemoSignIn) onDemoSignIn();
-                    navigate('/app');
-                  }}
-                  style={{ borderColor: 'var(--accent)', color: 'var(--accent)', display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
-                >
-                  <Sparkles size={14} /> Demo sign-in
-                </button>
-                <Link className="button primary" to="/login" onClick={() => setMenu(false)} style={{ justifyContent: 'center' }}>
-                  Sign in <KeyRound size={14} />
-                </Link>
-              </>
-            )}
-          </div>
         </nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="landing-nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {currentUser ? (
             <>
               <Link to="/app/account" className="button subtle desktop" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
