@@ -44,7 +44,7 @@ function Logo() {
   return (
     <Link className="logo" to="/">
       <span className="logo-symbol"><Shield size={23} strokeWidth={1.7} /></span>
-      <span>AEGIS<span className="logo-light">DEFENSE</span><small>DIGITAL RISK INTELLIGENCE</small></span>
+      <span>AEGIS</span>
     </Link>
   );
 }

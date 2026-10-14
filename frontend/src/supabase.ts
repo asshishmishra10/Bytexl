@@ -14,7 +14,7 @@ export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || `https://${SUPA
 // Default standard anon JWT structure for the project
 export const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxbXBuaHJjeHNoa3hnZ3FqanJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk1MDQwMDAsImV4cCI6MjAyNTA4MDAwMH0.aegisshield_sec_token';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxbXBuaHJjeHNoa3hnZ3FqanJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk1MDQwMDAsImV4cCI6MjAyNTA4MDAwMH0.aegis_sec_token';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -71,7 +71,7 @@ export async function signIn(email: string, password: string):Promise<{ user: An
 
     if (error) {
       // If project has mock/demo mode or unverified email, allow fallback demo login
-      if (email.includes('@apexbank.com') || email.includes('@aegisshield.io') || password === 'ApexSecure2026!') {
+      if (email.includes('@apexbank.com') || email.includes('@aegis.io') || password === 'ApexSecure2026!') {
         const fallbackProfile: AnalystProfile = {
           id: 'soc-analyst-' + Math.random().toString(36).substring(2, 9),
           email,
