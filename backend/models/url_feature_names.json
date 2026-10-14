@@ -1,0 +1,14 @@
+[
+  "url_length",
+  "domain_length",
+  "num_subdomains",
+  "has_ip_address",
+  "has_at_symbol",
+  "has_hyphen",
+  "num_digits",
+  "digit_ratio",
+  "shannon_entropy",
+  "suspicious_keyword_count",
+  "suspicious_tld",
+  "brand_homoglyph_count"
+]

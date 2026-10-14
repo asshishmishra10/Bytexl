@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+venv/
+.env
+
+# Build outputs
+dist/
+build/
+.vercel/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# SQLite WAL files
+*.db-shm
+*.db-wal
+
+# OS
+.DS_Store
+Thumbs.db
