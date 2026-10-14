@@ -18,7 +18,7 @@ from typing import Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from PIL import Image
-import imagehash
+from utils.hasher import compute_image_hash
 
 from db.session import get_db
 from db.models import Brand, Asset, Detection, Case, AuditEvent
@@ -323,7 +323,7 @@ async def analyze_app(payload: Dict[str, Any], db: Session = Depends(get_db)):
                     sub_cand.relative_to(allowed_base)
                     cand_path = sub_cand
                 if cand_path.exists() and cand_path.is_file():
-                    candidate_logo_hash = str(imagehash.phash(Image.open(cand_path)))
+                    candidate_logo_hash = compute_image_hash(Image.open(cand_path))
             except Exception as ex:
                 logger.warning("Could not safely compute pHash from %s: %s", logo_path_str, ex)
 

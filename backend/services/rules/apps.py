@@ -12,46 +12,42 @@ Implements all 4 App Store signals from the Hackathon Brief (30%):
 import logging
 from typing import Dict, Any, List, Optional
 from rapidfuzz import fuzz
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import imagehash
 
 logger = logging.getLogger(__name__)
 
 
 def calculate_text_similarity(text_a: str, text_b: str) -> float:
-    """Computes TF-IDF cosine similarity between two descriptions [0.0 - 100.0]."""
+    """Computes robust description similarity [0.0 - 100.0] via token set overlap."""
     if not text_a or not text_b:
         return 0.0
     try:
-        vec = TfidfVectorizer(stop_words="english")
-        tfidf_matrix = vec.fit_transform([text_a, text_b])
-        sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        return float(sim * 100.0)
+        return float(fuzz.token_set_ratio(str(text_a).strip(), str(text_b).strip()))
     except Exception as e:
-        logger.warning("TF-IDF vectorizer fallback to token_set_ratio: %s", e)
-        # Fallback to token ratio if texts are very short or single-word
-        return float(fuzz.token_set_ratio(text_a, text_b))
+        logger.warning("Description similarity fallback: %s", e)
+        return 0.0
 
 
 def calculate_logo_similarity(hash_a: Optional[str], hash_b: Optional[str]) -> float:
     """
-    Computes perceptual hash similarity from hex string hashes.
+    Computes perceptual hash similarity from 64-bit hex string hashes.
     Hamming distance <= 6 is nearly identical; <= 12 is visually similar.
-    Returns similarity percentage [0.0 - 100.0].
+    Returns similarity percentage [0.0 - 100.0] using bitwise XOR.
     """
     if not hash_a or not hash_b:
         return 0.0
     try:
-        h1 = imagehash.hex_to_hash(hash_a)
-        h2 = imagehash.hex_to_hash(hash_b)
-        dist = h1 - h2  # Hamming distance
-        # Standard normalized similarity: (1.0 - dist / 64.0) * 100.0
+        clean_a = str(hash_a).strip().lower()
+        clean_b = str(hash_b).strip().lower()
+        if clean_a == clean_b:
+            return 100.0
+        v1 = int(clean_a, 16)
+        v2 = int(clean_b, 16)
+        dist = bin(v1 ^ v2).count("1")
         sim = max(0.0, (1.0 - (dist / 64.0)) * 100.0)
-        return float(sim)
+        return float(round(sim, 2))
     except Exception as e:
-        logger.warning("pHash hex_to_hash failed for '%s' vs '%s': %s", hash_a, hash_b, e)
-        return 100.0 if hash_a.strip().lower() == hash_b.strip().lower() else 0.0
+        logger.warning("pHash distance failed for '%s' vs '%s': %s", hash_a, hash_b, e)
+        return 100.0 if str(hash_a).strip().lower() == str(hash_b).strip().lower() else 0.0
 
 
 def evaluate_app_store_signals(

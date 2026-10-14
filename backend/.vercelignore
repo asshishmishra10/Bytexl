@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+*.csv
+prepare_mobile_data.py
+train_mobile_model.py
+train_social_model.py
+train_url_model.py
+Instagram fake/
+.git/
+.gitignore

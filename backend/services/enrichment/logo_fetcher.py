@@ -10,7 +10,7 @@ import logging
 from typing import Optional
 import requests
 from PIL import Image
-import imagehash
+from utils.hasher import compute_image_hash
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def fetch_clearbit_logo_hash(domain: str, timeout: float = DEFAULT_TIMEOUT) -> O
             img = Image.open(io.BytesIO(resp.content))
             if img.mode not in ("RGB", "L"):
                 img = img.convert("RGB")
-            phash_val = str(imagehash.phash(img))
+            phash_val = compute_image_hash(img)
             logger.info("Derived logo pHash '%s' from Clearbit for '%s'", phash_val, clean_domain)
             return phash_val
     except Exception as e:
@@ -60,7 +60,7 @@ def fetch_clearbit_logo_hash(domain: str, timeout: float = DEFAULT_TIMEOUT) -> O
             img = Image.open(io.BytesIO(resp.content))
             if img.mode not in ("RGB", "L"):
                 img = img.convert("RGB")
-            phash_val = str(imagehash.phash(img))
+            phash_val = compute_image_hash(img)
             logger.info("Derived logo pHash '%s' from Google Favicon CDN for '%s'", phash_val, clean_domain)
             return phash_val
     except Exception as e:
