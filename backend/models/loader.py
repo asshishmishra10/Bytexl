@@ -22,6 +22,12 @@ try:
 except ImportError:
     joblib = None
 
+from models.pure_engine import (
+    get_pure_social_ensemble,
+    get_pure_mobile_ensemble,
+    get_pure_url_ensemble,
+)
+
 MODEL_DIR = os.path.dirname(__file__)
 
 _url_model = None
@@ -132,19 +138,22 @@ def get_url_model():
 
 def predict_url(url_or_features: Union[str, Dict[str, float]]) -> float:
     """Return URL phishing risk probability in [0.0, 1.0]."""
-    model = get_url_model()
-    if model is None:
-        return 0.0
-
     if isinstance(url_or_features, str):
         feats = extract_url_features_dict(url_or_features)
     else:
         feats = url_or_features
 
     vec = [float(feats.get(k, 0.0)) for k in URL_FEATURE_NAMES]
-    arr = np.array([vec], dtype=float)
-    proba = model.predict_proba(arr)
-    return float(proba[0][1])
+    model = get_url_model()
+    if model is not None and hasattr(model, "predict_proba"):
+        try:
+            arr = np.array([vec], dtype=float)
+            proba = model.predict_proba(arr)
+            return float(proba[0][1])
+        except Exception:
+            pass
+
+    return get_pure_url_ensemble().predict_proba(vec)
 
 
 # ---------------- 2. Social Profile Model ----------------
@@ -181,14 +190,17 @@ def predict_social_profile(features: Dict[str, Any]) -> float:
     Score a social profile given dict of features.
     Returns probability of account being fake/impersonator [0.0, 1.0].
     """
-    model = get_social_model()
-    if model is None:
-        return 0.0
-    
     vec = [float(features.get(k, 0)) for k in SOCIAL_FEATURE_KEYS]
-    arr = np.array([vec])
-    proba = model.predict_proba(arr)
-    return float(proba[0][1])
+    model = get_social_model()
+    if model is not None and hasattr(model, "predict_proba"):
+        try:
+            arr = np.array([vec])
+            proba = model.predict_proba(arr)
+            return float(proba[0][1])
+        except Exception:
+            pass
+
+    return get_pure_social_ensemble().predict_proba(vec)
 
 
 # ---------------- 3. Mobile App Model ----------------
@@ -243,11 +255,6 @@ def predict_mobile_app(features: Union[List[Any], Dict[str, Any], set]) -> float
     - A pre-computed numeric feature vector of length 215
     Returns probability of app being rogue/malicious (Class S) [0.0, 1.0].
     """
-    model = get_mobile_model()
-    if model is None:
-        return 0.0
-
-    # If already a 215-element numeric list, use directly
     if (
         isinstance(features, list)
         and len(features) == len(MOBILE_FEATURE_NAMES)
@@ -257,7 +264,14 @@ def predict_mobile_app(features: Union[List[Any], Dict[str, Any], set]) -> float
     else:
         vec = manifest_to_vector(features)
 
-    arr = np.array([vec], dtype=float)
-    proba = model.predict_proba(arr)
-    return float(proba[0][1])
+    model = get_mobile_model()
+    if model is not None and hasattr(model, "predict_proba"):
+        try:
+            arr = np.array([vec], dtype=float)
+            proba = model.predict_proba(arr)
+            return float(proba[0][1])
+        except Exception:
+            pass
+
+    return get_pure_mobile_ensemble().predict_proba(vec)
 
