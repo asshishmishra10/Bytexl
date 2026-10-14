@@ -10,12 +10,9 @@ venv/
 env/
 ENV/
 
-# Database files
-*.db
+# SQLite lock files
 *.db-shm
 *.db-wal
-*.sqlite
-*.sqlite3
 
 # Distribution / packaging
 build/

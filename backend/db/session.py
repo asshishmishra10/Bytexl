@@ -48,9 +48,11 @@ engine = create_engine(DATABASE_URL, **engine_args)
 if is_sqlite:
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
-        """Enables WAL mode, normal synchronicity, and foreign keys for high concurrency."""
         cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
+        if os.environ.get("VERCEL"):
+            cursor.execute("PRAGMA journal_mode=MEMORY")
+        else:
+            cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
