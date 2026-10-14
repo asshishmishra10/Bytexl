@@ -85,7 +85,7 @@ If you prefer hosting the FastAPI backend on a dedicated container service (like
 4. Deploy! The included [frontend/vercel.json](file:///d:/BYTEXL_HACKATHON/Whole_Project/ByteXl/Aegisshield_Production/frontend/vercel.json) guarantees that SPA routes (`/app`, `/app/analyzer`, `/app/account`, `/login`) do not 404 when refreshed in the browser.
 
 ### Part B: Deploy Backend
-1. **On Vercel**: Set root directory to `backend`, deploy using [backend/vercel.json](file:///d:/BYTEXL_HACKATHON/Whole_Project/ByteXl/Aegisshield_Production/backend/vercel.json).
+1. **On Vercel**: Import the repository, set **Root Directory** to `backend`, and keep the auto-detected **FastAPI** framework preset (Vercel runs `backend/main.py` natively). No `vercel.json` is needed for the backend.
 2. **On Render / Railway**:
    - Build Command: `pip install -r requirements.txt`
    - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
